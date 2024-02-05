@@ -231,6 +231,7 @@ class Window(QWidget):
 		tab_layout2 = QVBoxLayout()
 		tab_wgt2.setLayout(tab_layout2)
 
+		# Tab 1
 		acc1_layout = QHBoxLayout(self)
 		acc1_l = QLabel("Username")
 		acc1_l.hide()
@@ -275,6 +276,38 @@ class Window(QWidget):
 		page.append(self.acc3_i)
 		page.append(self.check_btn)
 
+		# Tab 2
+		login_acc1_layout = QHBoxLayout(self)
+		login_acc1_l = QLabel("Username")
+		login_acc1_l.hide()
+		self.login_acc1_i = QLineEdit()
+		self.login_acc1_i.hide()
+		login_acc1_layout.addWidget(login_acc1_l)
+		login_acc1_layout.addWidget(self.login_acc1_i)
+		tab_layout2.addLayout(login_acc1_layout)
+
+		page.append(login_acc1_l)
+		page.append(self.login_acc1_i)
+
+		login_acc2_layout = QHBoxLayout(self)
+		login_acc2_l = QLabel("Password")
+		login_acc2_l.hide()
+		self.login_acc2_i = QLineEdit()
+		self.login_acc2_i.setEchoMode(QLineEdit.EchoMode.Password)
+		self.login_acc2_i.hide()
+		login_acc2_layout.addWidget(login_acc2_l)
+		login_acc2_layout.addWidget(self.login_acc2_i)
+		tab_layout2.addLayout(login_acc2_layout)
+
+		page.append(login_acc2_l)
+		page.append(self.login_acc2_i)
+
+		self.login_check_btn = QPushButton("Check")
+		self.login_check_btn.pressed.connect(self.check_userdata_login)
+		self.login_check_btn.hide()
+		page.append(self.login_check_btn)
+		tab_layout2.addWidget(self.login_check_btn)
+
 		tabs = QTabWidget()
 		tabs.addTab(tab_wgt1, "Register")
 		tabs.addTab(tab_wgt2, "Login")
@@ -309,6 +342,33 @@ class Window(QWidget):
 					QErrorDialog(data["reason"])
 				else:
 					self.check_btn.setDisabled(True)
+					self.login_check_btn.setDisabled(True)
+					self.next_btn.setEnabled(True)
+		except:
+			QErrorDialog("You can't use those characters")
+
+	def check_userdata_login(self):
+		username = self.login_acc1_i.text()
+		pw = self.login_acc2_i.text()
+
+		check_url = self.login_url
+		check_url = check_url.replace("%username%", username)
+		check_url = check_url.replace("%password%", pw)
+		try:
+			with request.urlopen(check_url) as resp:
+				raw_data = resp.read().decode()
+				data = json.loads(raw_data)
+				print(f"Received answer from server: {data}")
+				if data.get("state") is None:
+					QErrorDialog("Something went wrong! Try again later. ('state' is None)")
+					return
+
+				state = data["state"]
+				if state == "error":
+					QErrorDialog(data["reason"])
+				else:
+					self.check_btn.setDisabled(True)
+					self.login_check_btn.setDisabled(True)
 					self.next_btn.setEnabled(True)
 		except:
 			QErrorDialog("You can't use those characters")
