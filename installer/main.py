@@ -1,3 +1,4 @@
+import json
 import sys
 
 from PyQt6.QtWidgets import *
@@ -63,7 +64,6 @@ class Window(QWidget):
 		space.setStyleSheet("background: url(\"installer/side.png\");")
 		space.setFixedWidth(200)
 		other_layout.addWidget(space)
-		print(space.adjustSize())
 
 		self.layout = QVBoxLayout()
 		self.title = QLabel("Welcome to the CrystalStudio Setup")
@@ -248,21 +248,39 @@ class Window(QWidget):
 		acc3_layout.addWidget(self.acc3_i)
 		self.layout.addLayout(acc3_layout)
 
-		check_btn = QPushButton("Check")
-		check_btn.pressed.connect(self.check_userdata)
-		check_btn.hide()
-		self.layout.addWidget(check_btn)
+		self.check_btn = QPushButton("Check")
+		self.check_btn.pressed.connect(self.check_userdata)
+		self.check_btn.hide()
+		self.layout.addWidget(self.check_btn)
 
 		page.append(acc3_l)
 		page.append(self.acc3_i)
-		page.append(check_btn)
+		page.append(self.check_btn)
 
 	def check_userdata(self):
 		username = self.acc1_i.text()
 		pw1 = self.acc2_i.text()
 		pw2 = self.acc3_i.text()
 
+		if pw1 != pw2:
+			QErrorDialog("Passwords aren't the same!")
+			return
 
+		check_url = f"https://extras.snackbag.net/crystal/register/validate?username={username}&password={pw1}"
+		with request.urlopen(check_url) as resp:
+			raw_data = resp.read().decode()
+			data = json.loads(raw_data)
+			print(f"Received answer from server: {data}")
+			if data.get("state") is None:
+				QErrorDialog("Something went wrong! Try again later. ('state' is None)")
+				return
+
+			state = data["state"]
+			if state == "error":
+				QErrorDialog(data["reason"])
+			else:
+				self.check_btn.setDisabled(True)
+				self.next_btn.setEnabled(True)
 
 	def switch_page(self, page: int):
 		for elem in self.pages[self.current_page]:
