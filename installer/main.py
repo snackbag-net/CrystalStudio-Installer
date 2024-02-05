@@ -351,10 +351,11 @@ class Window(QWidget):
 		self.switch_page(self.current_page - 1)
 
 	def enable_devmode(self):
-		def update_vars(din1: QLineEdit, din2: QLineEdit, din3: QLineEdit):
+		def update_vars(din1: QLineEdit, din2: QLineEdit, din3: QLineEdit, din4: QLineEdit):
 			self.check_url = din1.text()
 			self.register_url = din2.text()
 			self.version = int(din3.text())
+			self.login_url = din4.text()
 			print(f"Updated check url to {self.check_url}")
 			print(f"Updated register url to {self.register_url}")
 			print(f"Updated version to {self.version}")
@@ -389,7 +390,7 @@ class Window(QWidget):
 		dsb = QPushButton(dialog)
 		dsb.move(10, 280)
 		dsb.setText("Update")
-		dsb.clicked.connect(lambda: update_vars(din1, din2, din3))
+		dsb.clicked.connect(lambda: update_vars(din1, din2, din3, din4))
 
 		dvb = QPushButton(dialog)
 		dvb.move(90, 280)
