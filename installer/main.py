@@ -359,6 +359,7 @@ class Window(QWidget):
 			print(f"Updated check url to {self.check_url}")
 			print(f"Updated register url to {self.register_url}")
 			print(f"Updated version to {self.version}")
+			print(f"Updated login url to {self.login_url}")
 
 		self.space.setStyleSheet("background: url(\"installer/side_dev.png\");")
 		QErrorDialog("Developer mode activated - Use with caution. \n\nIF SOMEBODY HAS ASKED YOU TO OPEN THIS, THERE IS AN 11/10 CHANCE YOU ARE GETTING SCAMMED! CLOSE THE INSTALLER IMMEDIATELY")
