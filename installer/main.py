@@ -57,7 +57,7 @@ class Window(QWidget):
 		                  "Installation Options", "CrystalStudio Account"]
 		self.current_page = 0
 		self.build_default()
-		self.switch_page(0)
+		self.switch_page(4)
 
 		self.developer_shortcut = QShortcut("Shift+Alt+D", self)
 		self.developer_shortcut.activated.connect(self.enable_devmode)
@@ -295,20 +295,23 @@ class Window(QWidget):
 		check_url = self.check_url
 		check_url = check_url.replace("%username%", username)
 		check_url = check_url.replace("%password%", pw1)
-		with request.urlopen(check_url) as resp:
-			raw_data = resp.read().decode()
-			data = json.loads(raw_data)
-			print(f"Received answer from server: {data}")
-			if data.get("state") is None:
-				QErrorDialog("Something went wrong! Try again later. ('state' is None)")
-				return
+		try:
+			with request.urlopen(check_url) as resp:
+				raw_data = resp.read().decode()
+				data = json.loads(raw_data)
+				print(f"Received answer from server: {data}")
+				if data.get("state") is None:
+					QErrorDialog("Something went wrong! Try again later. ('state' is None)")
+					return
 
-			state = data["state"]
-			if state == "error":
-				QErrorDialog(data["reason"])
-			else:
-				self.check_btn.setDisabled(True)
-				self.next_btn.setEnabled(True)
+				state = data["state"]
+				if state == "error":
+					QErrorDialog(data["reason"])
+				else:
+					self.check_btn.setDisabled(True)
+					self.next_btn.setEnabled(True)
+		except:
+			QErrorDialog("You can't use those characters")
 
 	def switch_page(self, page: int):
 		for elem in self.pages[self.current_page]:
