@@ -57,7 +57,7 @@ class Window(QWidget):
 		                  "Installation Options", "CrystalStudio Account"]
 		self.current_page = 0
 		self.build_default()
-		self.switch_page(4)
+		self.switch_page(0)
 
 		self.developer_shortcut = QShortcut("Shift+Alt+D", self)
 		self.developer_shortcut.activated.connect(self.enable_devmode)
