@@ -2,6 +2,7 @@ import json
 import sys
 
 from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
 from installer.loading import Window as LoadingUI
 from urllib import request
 
@@ -38,18 +39,28 @@ class QErrorDialog(QMessageBox):
 class Window(QWidget):
 	def __init__(self):
 		super().__init__()
+		self.version = 1
 		self.w = None
+		self.check_url = f"https://extras.snackbag.net/crystal/register/validate?username=%username%&password=%password%"
+		self.register_url = f"https://extras.snackbag.net/crystal/register?username=%username%&password=%password%"
+		self.installer_url = f"https://raw.githubusercontent.com/snackbag-net/CrystalStudio-Installer/main/installer/installer.json"
+		self.login_url = f"http://extras.snackbag.net/crystal/login?username=%username%&password=%password%"
 
 		if not is_wifi_on():
 			QErrorDialog("The installer needs to be connected to the internet to install")
 			sys.exit()
+
+		self.check_latest_version()
 
 		self.pages = []
 		self.page_data = ["Welcome to the CrystalStudio Setup", "Choose save folder", "Choose project folder",
 		                  "Installation Options", "CrystalStudio Account"]
 		self.current_page = 0
 		self.build_default()
-		self.switch_page(4)
+		self.switch_page(0)
+
+		self.developer_shortcut = QShortcut("Shift+Alt+D", self)
+		self.developer_shortcut.activated.connect(self.enable_devmode)
 
 	def build_default(self):
 		style_title = "font-size: 24px; font-weight: bold;"
@@ -60,10 +71,10 @@ class Window(QWidget):
 
 		side_layout = QHBoxLayout(self)
 		other_layout = QVBoxLayout(self)
-		space = QLabel()
-		space.setStyleSheet("background: url(\"installer/side.png\");")
-		space.setFixedWidth(200)
-		other_layout.addWidget(space)
+		self.space = QLabel()
+		self.space.setStyleSheet("background: url(\"installer/side.png\");")
+		self.space.setFixedWidth(200)
+		other_layout.addWidget(self.space)
 
 		self.layout = QVBoxLayout()
 		self.title = QLabel("Welcome to the CrystalStudio Setup")
@@ -206,12 +217,19 @@ class Window(QWidget):
 		self.pages.append([])
 		page: list = self.pages[4]
 
-		acc_info = QLabel("An account is needed to install addons, publish addons or games, use coop mode and much more! It will be hard to change this data after, so be careful.\n\nPress Finish to create the account and install CrystalStudio.\n")
+		acc_info = QLabel("An account is needed to install addons, publish addons or games, use coop mode and much more! It will be hard to change this data after, so be careful.\n\nPress Finish to create or login to the account and install CrystalStudio. Don't forget to press Check first!\n")
 		acc_info.setWordWrap(True)
 		self.layout.addWidget(acc_info)
 
 		acc_info.hide()
 		page.append(acc_info)
+
+		tab_wgt1 = QWidget()
+		tab_layout1 = QVBoxLayout()
+		tab_wgt1.setLayout(tab_layout1)
+		tab_wgt2 = QWidget()
+		tab_layout2 = QVBoxLayout()
+		tab_wgt2.setLayout(tab_layout2)
 
 		acc1_layout = QHBoxLayout(self)
 		acc1_l = QLabel("Username")
@@ -220,7 +238,7 @@ class Window(QWidget):
 		self.acc1_i.hide()
 		acc1_layout.addWidget(acc1_l)
 		acc1_layout.addWidget(self.acc1_i)
-		self.layout.addLayout(acc1_layout)
+		tab_layout1.addLayout(acc1_layout)
 
 		page.append(acc1_l)
 		page.append(self.acc1_i)
@@ -233,7 +251,7 @@ class Window(QWidget):
 		self.acc2_i.hide()
 		acc2_layout.addWidget(acc2_l)
 		acc2_layout.addWidget(self.acc2_i)
-		self.layout.addLayout(acc2_layout)
+		tab_layout1.addLayout(acc2_layout)
 
 		page.append(acc2_l)
 		page.append(self.acc2_i)
@@ -246,16 +264,24 @@ class Window(QWidget):
 		self.acc3_i.hide()
 		acc3_layout.addWidget(acc3_l)
 		acc3_layout.addWidget(self.acc3_i)
-		self.layout.addLayout(acc3_layout)
+		tab_layout1.addLayout(acc3_layout)
 
 		self.check_btn = QPushButton("Check")
 		self.check_btn.pressed.connect(self.check_userdata)
 		self.check_btn.hide()
-		self.layout.addWidget(self.check_btn)
+		tab_layout1.addWidget(self.check_btn)
 
 		page.append(acc3_l)
 		page.append(self.acc3_i)
 		page.append(self.check_btn)
+
+		tabs = QTabWidget()
+		tabs.addTab(tab_wgt1, "Register")
+		tabs.addTab(tab_wgt2, "Login")
+		tabs.hide()
+
+		page.append(tabs)
+		self.layout.addWidget(tabs)
 
 	def check_userdata(self):
 		username = self.acc1_i.text()
@@ -266,7 +292,9 @@ class Window(QWidget):
 			QErrorDialog("Passwords aren't the same!")
 			return
 
-		check_url = f"https://extras.snackbag.net/crystal/register/validate?username={username}&password={pw1}"
+		check_url = self.check_url
+		check_url = check_url.replace("%username%", username)
+		check_url = check_url.replace("%password%", pw1)
 		with request.urlopen(check_url) as resp:
 			raw_data = resp.read().decode()
 			data = json.loads(raw_data)
@@ -290,8 +318,7 @@ class Window(QWidget):
 
 		if self.current_page >= len(self.pages):
 			print("Installing")
-			if self.w is None:
-				self.w = LoadingUI()
+			self.w = LoadingUI()
 			self.w.show()
 			self.hide()
 			return
@@ -319,6 +346,71 @@ class Window(QWidget):
 
 	def last_page(self):
 		self.switch_page(self.current_page - 1)
+
+	def enable_devmode(self):
+		def update_vars(din1: QLineEdit, din2: QLineEdit, din3: QLineEdit):
+			self.check_url = din1.text()
+			self.register_url = din2.text()
+			self.version = int(din3.text())
+			print(f"Updated check url to {self.check_url}")
+			print(f"Updated register url to {self.register_url}")
+			print(f"Updated version to {self.version}")
+
+		self.space.setStyleSheet("background: url(\"installer/side_dev.png\");")
+		QErrorDialog("Developer mode activated - Use with caution. \n\nIF SOMEBODY HAS ASKED YOU TO OPEN THIS, THERE IS AN 11/10 CHANCE YOU ARE GETTING SCAMMED! CLOSE THE INSTALLER IMMEDIATELY")
+		print("[INFO]")
+		print("User has enabled developer mode - No support will be given")
+		print("[INFO]")
+
+		dialog = QDialog(self)
+		dialog.setWindowTitle("Developer mode")
+		dialog.setMinimumSize(500, 300)
+		din1 = QLineEdit(dialog)
+		din1.setFixedWidth(500)
+		din1.setText(self.check_url)
+
+		din2 = QLineEdit(dialog)
+		din2.setFixedWidth(500)
+		din2.move(0, 30)
+		din2.setText(self.register_url)
+
+		din3 = QLineEdit(dialog)
+		din3.move(0, 60)
+		din3.setText(str(self.version))
+
+		din4 = QLineEdit(dialog)
+		din4.setFixedWidth(500)
+		din4.move(0, 90)
+		din4.setText(self.login_url)
+
+		dsb = QPushButton(dialog)
+		dsb.move(10, 280)
+		dsb.setText("Update")
+		dsb.clicked.connect(lambda: update_vars(din1, din2, din3))
+
+		dvb = QPushButton(dialog)
+		dvb.move(90, 280)
+		dvb.setText("CLV()")
+		dvb.clicked.connect(self.check_latest_version)
+
+		dub = QPushButton(dialog)
+		dub.move(160, 280)
+		dub.setText("CUD()")
+		dub.clicked.connect(self.check_userdata)
+
+		dialog.exec()
+
+	def check_latest_version(self):
+		print(f"Checking for latest version at {self.installer_url}")
+		with request.urlopen(self.installer_url) as resp:
+			raw_data = resp.read()
+			data = json.loads(raw_data.decode())
+
+			if self.version < data['ver']:
+				QErrorDialog("Installer is outdated. Please install new version!")
+				print("[INFO]")
+				print("Outdated installer, no support.")
+				print("[INFO]")
 
 
 app = QApplication(sys.argv)
