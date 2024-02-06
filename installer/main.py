@@ -1,10 +1,13 @@
 import json
+import os
 import sys
 
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from installer.loading import Window as LoadingUI
 from urllib import request
+from pathlib import Path
+import webbrowser
 
 
 def is_wifi_on() -> bool:
@@ -41,6 +44,8 @@ class Window(QWidget):
 		super().__init__()
 		self.version = 1
 		self.w = None
+		self.save_folder = None
+		self.project_folder = None
 		self.check_url = f"https://extras.snackbag.net/crystal/register/validate?username=%username%&password=%password%"
 		self.register_url = f"https://extras.snackbag.net/crystal/register?username=%username%&password=%password%"
 		self.installer_url = f"https://raw.githubusercontent.com/snackbag-net/CrystalStudio-Installer/main/installer/installer.json"
@@ -52,6 +57,11 @@ class Window(QWidget):
 
 		self.check_latest_version()
 
+		if sys.platform not in ["darwin", "win32"]:
+			QErrorDialog("Unsupported operating system! If you are using Linux, try to clone the GitHub repository instead of using the installer")
+
+		self.mk_default_folders()
+
 		self.pages = []
 		self.page_data = ["Welcome to the CrystalStudio Setup", "Choose save folder", "Choose project folder",
 		                  "Installation Options", "CrystalStudio Account"]
@@ -61,6 +71,25 @@ class Window(QWidget):
 
 		self.developer_shortcut = QShortcut("Shift+Alt+D", self)
 		self.developer_shortcut.activated.connect(self.enable_devmode)
+
+	def mk_default_folders(self):
+		# Save folder
+		if sys.platform == "darwin":
+			self.save_folder = os.path.expanduser("~/Library/Application Support/SnackBag/CrystalStudio/")
+			Path(self.save_folder).mkdir(parents=True, exist_ok=True)
+
+			self.project_folder = os.path.expanduser("~/CrystalProjects/")
+			Path(self.project_folder).mkdir(parents=True, exist_ok=True)
+		elif sys.platform == "win32":
+			self.save_folder = Path(Path(os.getenv('APPDATA')) / Path("/SnackBag/CrystalStudio/"))
+			self.save_folder.mkdir(parents=True, exist_ok=True)
+
+			self.project_folder = Path("~/CrystalProjects/")
+			Path(self.project_folder).mkdir(parents=True, exist_ok=True)
+		else:
+			self.save_folder = Path("/")
+			self.project_folder = Path("~/CrystalProjects/")
+			Path(self.project_folder).mkdir(parents=True, exist_ok=True)
 
 	def build_default(self):
 		style_title = "font-size: 24px; font-weight: bold;"
@@ -124,13 +153,25 @@ class Window(QWidget):
 		page: list = self.pages[1]
 
 		text2 = QLabel(
-			"Setup will save CrystalStudio addons and other data in the following folder. To select a different folder, click Browse and select another folder.\n\nNote: this is not the folder where CrystalStudio will be installed in!\n\nClick Next to continue.")
+			"Setup will save CrystalStudio addons and other data in the following folder. To select a different folder, click Browse and select another folder.\n\nNote: this is not the folder where CrystalStudio will be installed in!\n\nClick Next to continue.\n")
 		text2.setWordWrap(True)
 		text2.adjustSize()
 		text2.hide()
 		self.layout.addWidget(text2)
 
+		save_folder_l = QHBoxLayout()
+		self.layout.addLayout(save_folder_l)
+		self.save_folder_i = QLineEdit(self.save_folder)
+		self.save_folder_i.hide()
+		save_folder_l.addWidget(self.save_folder_i)
+		save_folder_b = QPushButton("Browse")
+		save_folder_b.clicked.connect(self.update_save_folder)
+		save_folder_b.hide()
+		save_folder_l.addWidget(save_folder_b)
+
 		page.append(text2)
+		page.append(self.save_folder_i)
+		page.append(save_folder_b)
 
 		# Page 3 (2)
 		self.pages.append([])
@@ -143,7 +184,19 @@ class Window(QWidget):
 		text3.hide()
 		self.layout.addWidget(text3)
 
+		project_folder_l = QHBoxLayout()
+		self.layout.addLayout(project_folder_l)
+		self.project_folder_i = QLineEdit(self.project_folder)
+		self.project_folder_i.hide()
+		project_folder_l.addWidget(self.project_folder_i)
+		project_folder_b = QPushButton("Browse")
+		project_folder_b.clicked.connect(self.update_project_folder)
+		project_folder_b.hide()
+		project_folder_l.addWidget(project_folder_b)
+
 		page.append(text3)
+		page.append(self.project_folder_i)
+		page.append(project_folder_b)
 
 		# Page 4 (3)
 		self.pages.append([])
@@ -476,6 +529,14 @@ class Window(QWidget):
 				print("[INFO]")
 				print("Outdated installer, no support.")
 				print("[INFO]")
+
+	def update_save_folder(self):
+		self.save_folder = str(QFileDialog.getExistingDirectory(self, "Select Directory", self.save_folder))
+		self.save_folder_i.setText(self.save_folder)
+
+	def update_project_folder(self):
+		self.project_folder = str(QFileDialog.getExistingDirectory(self, "Select Directory", self.project_folder))
+		self.project_folder_i.setText(self.project_folder)
 
 
 app = QApplication(sys.argv)
