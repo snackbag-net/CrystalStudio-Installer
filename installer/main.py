@@ -73,7 +73,7 @@ class Window(QWidget):
 		self.developer_shortcut.activated.connect(self.enable_devmode)
 
 	def mk_default_folders(self):
-		# Save folder
+		# Save and projects folder
 		if sys.platform == "darwin":
 			self.save_folder = os.path.expanduser("~/Library/Application Support/SnackBag/CrystalStudio/")
 			Path(self.save_folder).mkdir(parents=True, exist_ok=True)
@@ -84,11 +84,11 @@ class Window(QWidget):
 			self.save_folder = Path(Path(os.getenv('APPDATA')) / Path("/SnackBag/CrystalStudio/"))
 			self.save_folder.mkdir(parents=True, exist_ok=True)
 
-			self.project_folder = Path("~/CrystalProjects/")
+			self.project_folder = os.path.expanduser("~/CrystalProjects/")
 			Path(self.project_folder).mkdir(parents=True, exist_ok=True)
 		else:
 			self.save_folder = Path("/")
-			self.project_folder = Path("~/CrystalProjects/")
+			self.project_folder = os.path.expanduser("~/CrystalProjects/")
 			Path(self.project_folder).mkdir(parents=True, exist_ok=True)
 
 	def build_default(self):
