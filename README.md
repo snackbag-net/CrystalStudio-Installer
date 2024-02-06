@@ -9,4 +9,4 @@ Installer for [CrystalStudio](https://github.com/snackbag-net/CrystalStudio2) (c
 |-----------|-------|---------|-------|
 | Autobuild | Yes   | No      | No    |
 | Tested    | Yes   | No      | No    |
-| Probably  | Yes   | Yes     | Maybe |
+| Planned   | Yes   | Yes     | No    |
