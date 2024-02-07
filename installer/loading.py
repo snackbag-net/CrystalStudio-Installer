@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import sys
 import time
 import zipfile
@@ -98,7 +99,7 @@ class InstallThread(QThread):
 
 		time.sleep(0.2)  # control time
 		print(f"Created/logged into account {self.username}")
-		download_url = "https://github.com/snackbag-net/empty-installation/archive/refs/tags/test-2.zip"  # TODO: Needs to be automated (High priority)
+		download_url = "https://github.com/snackbag-net/empty-installation/archive/refs/tags/test-3.zip"  # TODO: Needs to be automated (High priority)
 		unzipped_name = download_url.split("/")[4] + "-" + download_url.split("/")[8][:-4]
 		self.update_progress.emit({"text": "Installing: Preparing download", "value": 20})
 		if not os.path.exists("installation"):
@@ -130,10 +131,28 @@ class InstallThread(QThread):
 			os.system(f"python -m pip install {lib}")
 
 		time.sleep(0.2)  # control time
-		self.update_progress.emit({"text": "Installing: Installing CrystalStudio...", "value": 90})
+		self.update_progress.emit({"text": "Installing: Installing CrystalStudio...", "value": 80})
+		for cnt in content:
+			print(f"Installing content '{cnt}'")
+			if cnt.endswith("/"):
+				if os.path.exists(cnt):
+					print("Removing original...")
+					shutil.rmtree(cnt)
+			else:
+				if os.path.exists(cnt):
+					print("Removing original...")
+					os.remove(cnt)
+
+			shutil.move(unpacked_installation / cnt, os.getcwd())
+			print(f"Finished installing content '{cnt}'")
 
 		time.sleep(0.2)  # control time
-		self.update_progress.emit({"text": "Finishing", "value": 100})
+		self.update_progress.emit({"text": "Installing: Setting up CrystalStudio...", "value": 90})
+
+		time.sleep(0.2)  # control time
+		self.update_progress.emit({"text": "Finishing...", "value": 100})
+
+		shutil.rmtree("installation")
 
 		time.sleep(0.2)  # control time
 		self.finish_progress.emit(None)
