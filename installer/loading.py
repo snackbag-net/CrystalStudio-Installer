@@ -98,8 +98,8 @@ class InstallThread(QThread):
 
 		time.sleep(0.2)  # control time
 		print(f"Created/logged into account {self.username}")
-		download_url = "https://github.com/snackbag-net/empty-installation/archive/refs/tags/test-1.zip"  # TODO: Needs to be automated (High priority)
-		unzipped_name = "empty-installation-test-1"  # TODO: Needs to be automated (High priority)
+		download_url = "https://github.com/snackbag-net/empty-installation/archive/refs/tags/test-2.zip"  # TODO: Needs to be automated (High priority)
+		unzipped_name = download_url.split("/")[4] + "-" + download_url.split("/")[8][:-4]
 		self.update_progress.emit({"text": "Installing: Preparing download", "value": 20})
 		if not os.path.exists("installation"):
 			os.mkdir("installation")
