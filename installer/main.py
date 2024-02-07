@@ -40,12 +40,16 @@ class QErrorDialog(QMessageBox):
 
 
 class Window(QWidget):
-	def __init__(self):
+	def __init__(self, app_: QApplication):
 		super().__init__()
 		self.version = 1
+		self.method_create_account = None
+
 		self.w = None
+
 		self.save_folder = None
 		self.project_folder = None
+
 		self.check_url = f"https://extras.snackbag.net/crystal/register/validate?username=%username%&password=%password%"
 		self.register_url = f"https://extras.snackbag.net/crystal/register?username=%username%&password=%password%"
 		self.installer_url = f"https://raw.githubusercontent.com/snackbag-net/CrystalStudio-Installer/main/installer/installer.json"
@@ -361,13 +365,13 @@ class Window(QWidget):
 		page.append(self.login_check_btn)
 		tab_layout2.addWidget(self.login_check_btn)
 
-		tabs = QTabWidget()
-		tabs.addTab(tab_wgt1, "Register")
-		tabs.addTab(tab_wgt2, "Login")
-		tabs.hide()
+		self.tabs = QTabWidget()
+		self.tabs.addTab(tab_wgt1, "Register")
+		self.tabs.addTab(tab_wgt2, "Login")
+		self.tabs.hide()
 
-		page.append(tabs)
-		self.layout.addWidget(tabs)
+		page.append(self.tabs)
+		self.layout.addWidget(self.tabs)
 
 	def check_userdata(self):
 		username = self.acc1_i.text()
@@ -396,7 +400,10 @@ class Window(QWidget):
 				else:
 					self.check_btn.setDisabled(True)
 					self.login_check_btn.setDisabled(True)
+					self.tabs.setDisabled(True)
 					self.next_btn.setEnabled(True)
+
+					self.method_create_account = True
 		except:
 			QErrorDialog("You can't use those characters")
 
@@ -422,7 +429,10 @@ class Window(QWidget):
 				else:
 					self.check_btn.setDisabled(True)
 					self.login_check_btn.setDisabled(True)
+					self.tabs.setDisabled(True)
 					self.next_btn.setEnabled(True)
+
+					self.method_create_account = False
 		except:
 			QErrorDialog("You can't use those characters")
 
@@ -432,11 +442,29 @@ class Window(QWidget):
 
 		self.current_page = page
 
+		user_url = "https://extras.snackbag.net/crystal/get/"
 		if self.current_page >= len(self.pages):
 			print("Installing")
-			self.w = LoadingUI()
-			self.w.show()
+			if self.method_create_account:
+				username = json.loads(request.urlopen(user_url + self.acc1_i.text()).read().decode())["data"]["username"]
+				password = self.acc2_i.text()
+			else:
+				username = json.loads(request.urlopen(user_url + self.login_acc1_i.text()).read().decode())["data"]["username"]
+				password = self.login_acc2_i.text()
+
 			self.hide()
+			self.w = LoadingUI(
+				app,
+				self.method_create_account,
+				self.save_folder,
+				self.project_folder,
+				username,
+				password,
+				self.check_url,
+				self.register_url,
+				self.login_url
+			)
+			self.w.show()
 			return
 
 		if self.current_page >= len(self.pages) - 1:
@@ -541,7 +569,7 @@ class Window(QWidget):
 
 app = QApplication(sys.argv)
 
-window = Window()
+window = Window(app)
 window.show()
 
 sys.exit(app.exec())
